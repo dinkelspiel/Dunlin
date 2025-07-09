@@ -5,12 +5,22 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '',
+      path: '/-',
       component: AuthUserProvider,
       children: [
         {
-          path: '/dashboard',
-          name: 'dashboard',
+          path: '',
+          name: 'teams',
+          component: () => import('../views/Teams.vue'),
+        },
+        {
+          path: ':team',
+          name: 'team',
+          component: () => import('../views/Team.vue'),
+        },
+        {
+          path: ':team/:project',
+          name: 'project',
           component: () => import('../views/Dashboard.vue'),
         },
       ],

@@ -6,6 +6,7 @@ import (
 
 	"github.com/dinkelspiel/cdn/dao"
 	"github.com/dinkelspiel/cdn/models"
+	"github.com/dinkelspiel/cdn/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,9 +38,9 @@ func SetupRouter(v1 *gin.RouterGroup, db *sql.DB) {
 			Username: body.AdminUsername,
 			Email:    body.AdminEmail,
 		}
-		_, err = dao.CreateUser(db, user)
+		_, err = services.RegisterUser(db, user)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
 			return

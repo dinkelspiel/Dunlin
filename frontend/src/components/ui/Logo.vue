@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
       )
     "
   >
-    <div class="flex h-full w-full items-center justify-center rounded-[4px] bg-neutral-900">
+    <div class="flex h-full w-full items-center justify-center rounded-[6px] bg-neutral-900">
       <Bird class="flex size-4 items-center justify-center stroke-white" />
     </div>
   </div>

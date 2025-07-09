@@ -2,7 +2,6 @@ package dao
 
 import (
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/dinkelspiel/cdn/models"
@@ -13,7 +12,7 @@ func scanTeamRow(rows *sql.Rows, db *sql.DB) (*models.Team, error) {
 	var createdAt string
 	var updatedAt sql.NullString
 
-	if err := rows.Scan(&team.Id, &team.Name, &team.OwnerId, &createdAt, &updatedAt); err != nil {
+	if err := rows.Scan(&team.Id, &team.Name, &team.Slug, &team.OwnerId, &createdAt, &updatedAt); err != nil {
 		return nil, err
 	}
 
@@ -41,8 +40,8 @@ func scanTeamRow(rows *sql.Rows, db *sql.DB) (*models.Team, error) {
 	return &team, nil
 }
 
-func GetTeamById(db *sql.DB, id string) (*models.Team, error) {
-	rows, err := db.Query("SELECT id, name, owner_id, created_at, updated_at FROM teams WHERE id = ?", id)
+func GetTeamById(db *sql.DB, id int64) (*models.Team, error) {
+	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,52 @@ func GetTeamById(db *sql.DB, id string) (*models.Team, error) {
 	if rows.Next() {
 		return scanTeamRow(rows, db)
 	}
-	return nil, errors.New("no servers found with matching id")
+	return nil, nil
+}
+
+func GetTeamsByOwner(db *sql.DB, owner models.User) (*[]models.Team, error) {
+	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE owner_id = ?", owner.Id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teams []models.Team
+
+	if rows.Next() {
+		team, err := scanTeamRow(rows, db)
+		if err != nil {
+			return nil, err
+		}
+		teams = append(teams, *team)
+	}
+	return &teams, nil
+}
+
+func GetTeamByName(db *sql.DB, name string) (*models.Team, error) {
+	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE name = ?", name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		return scanTeamRow(rows, db)
+	}
+	return nil, nil
+}
+
+func GetTeamBySlug(db *sql.DB, slug string) (*models.Team, error) {
+	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE slug = ?", slug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		return scanTeamRow(rows, db)
+	}
+	return nil, nil
 }
 
 func GetTeamMembers(db *sql.DB, team models.Team) (*[]models.User, error) {
@@ -70,4 +114,15 @@ func GetTeamMembers(db *sql.DB, team models.Team) (*[]models.User, error) {
 		users = append(users, *user)
 	}
 	return &users, nil
+}
+
+func CreateTeam(db *sql.DB, team models.Team) (*models.Team, error) {
+	insertTeam := "INSERT INTO teams(name, slug, owner_id) VALUES(?, ?, ?)"
+
+	_, err := db.Exec(insertTeam, team.Name, team.Slug, team.OwnerId)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetTeamByName(db, team.Name)
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dinkelspiel/cdn/routers"
+	routers_user "github.com/dinkelspiel/cdn/routers/user"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -34,6 +35,7 @@ func setupRouter(db *sql.DB) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+	r.HandleMethodNotAllowed = true
 
 	r.Use(cors.New(cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH"},
@@ -56,6 +58,9 @@ func setupRouter(db *sql.DB) *gin.Engine {
 
 	routers.AuthRouter(v1, db)
 	routers.SetupRouter(v1, db)
+	routers.TeamsRouter(v1, db)
+	routers.TeamRouter(v1, db)
+	routers_user.UserTeamsRouter(v1, db)
 
 	r.POST("/api/statistics", func(c *gin.Context) {
 		var body PostStatisticBody

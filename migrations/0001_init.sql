@@ -34,8 +34,9 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
 );
 
 CREATE TABLE IF NOT EXISTS `teams` (
-    `id` UUID PRIMARY KEY NOT NULL,
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
     `name` VARCHAR(64) NOT NULL,
+    `slug` VARCHAR(64) NOT NULL,
     `owner_id` INT NOT NULL,
     `updated_at` TIMESTAMP,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -44,6 +45,15 @@ CREATE TABLE IF NOT EXISTS `teams` (
 CREATE TABLE IF NOT EXISTS `team_users` (
     `id` INT PRIMARY KEY AUTO_INCREMENT,
     `user_id` INT NOT NULL,
+    `team_id` INT NOT NULL,
+    `updated_at` TIMESTAMP,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `team_projects` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `name` VARCHAR(64) NOT NULL,
+    `slug` VARCHAR(64) NOT NULL,
     `team_id` INT NOT NULL,
     `updated_at` TIMESTAMP,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL

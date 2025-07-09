@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/gin-gonic/gin"
 )
@@ -46,17 +47,17 @@ func AuthRouter(v1 *gin.RouterGroup, db *sql.DB) {
 		}
 
 		code := randRange(10000, 99999)
-		auth_code := models.UserAuthCode{
+		authCode := models.UserAuthCode{
 			Code:   code,
 			UserId: *user.Id,
 			Used:   false,
 		}
-		dao.CreateUserAuthCode(db, auth_code)
+		dao.CreateUserAuthCode(db, authCode)
 
 		// TODO: Send email here
 
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "If an account exists for the email address you provided, a verification code has been sent. Please check your inbox (and spam folder) for further instructions. " + strconv.Itoa(auth_code.Code),
+			"message": "If an account exists for the email address you provided, a verification code has been sent. Please check your inbox (and spam folder) for further instructions. " + strconv.Itoa(authCode.Code),
 		})
 	})
 
@@ -67,9 +68,13 @@ func AuthRouter(v1 *gin.RouterGroup, db *sql.DB) {
 			return
 		}
 
-		code, err := dao.GetUserAuthCodeByCode(db, body.Code)
+		code, err := dao.GetUnusedUserAuthCodeByCode(db, body.Code)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if code == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No unused code found"})
 			return
 		}
 
@@ -79,34 +84,28 @@ func AuthRouter(v1 *gin.RouterGroup, db *sql.DB) {
 			return
 		}
 
-		user_session, err := dao.CreateUserSession(db, *code.User)
+		userSession, err := dao.CreateUserSession(db, *code.User)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-		c.SetCookie("cdn-session-token", user_session.Token, 999999, "/", "localhost", false, true)
+		c.SetCookie("cdn-session-token", userSession.Token, 999999, "/", "localhost", false, true)
 
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "Log in successful",
-			"token":   user_session.Token,
+			"token":   userSession.Token,
 		})
 	})
 
-	auth.GET("/check-session", func(c *gin.Context) {
-		cookie, err := c.Cookie("cdn-session-token")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		user_session, err := dao.GetUserSessionByToken(db, cookie)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+	auth.GET("/check-session", middleware.AuthMiddleware(db), func(c *gin.Context) {
+		authUser, _ := c.MustGet("authUser").(models.User)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":  "Check Successful",
-			"id":       user_session.User.Id,
-			"username": user_session.User.Username,
-			"email":    user_session.User.Email,
+			"id":       authUser.Id,
+			"username": authUser.Username,
+			"email":    authUser.Email,
 		})
 	})
 }

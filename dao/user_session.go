@@ -2,18 +2,17 @@ package dao
 
 import (
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/dinkelspiel/cdn/models"
 )
 
 func ScanUserSessionRow(rows *sql.Rows) (*models.UserSession, error) {
-	var user_session models.UserSession
+	var userSession models.UserSession
 	var createdAt string
 	var updatedAt sql.NullString
 
-	if err := rows.Scan(&user_session.Id, &user_session.UserId, &user_session.Token, &updatedAt, &createdAt); err != nil {
+	if err := rows.Scan(&userSession.Id, &userSession.UserId, &userSession.Token, &updatedAt, &createdAt); err != nil {
 		return nil, err
 	} else {
 		var updatedAtTime time.Time
@@ -28,12 +27,12 @@ func ScanUserSessionRow(rows *sql.Rows) (*models.UserSession, error) {
 			return nil, err
 		}
 		if updatedAt.Valid {
-			user_session.UpdatedAt = &updatedAtTime
+			userSession.UpdatedAt = &updatedAtTime
 		} else {
-			user_session.UpdatedAt = nil
+			userSession.UpdatedAt = nil
 		}
-		user_session.CreatedAt = &createdAtTime
-		return &user_session, nil
+		userSession.CreatedAt = &createdAtTime
+		return &userSession, nil
 	}
 }
 
@@ -45,18 +44,18 @@ func GetUserSessionByToken(db *sql.DB, token string) (*models.UserSession, error
 	defer rows.Close()
 
 	if rows.Next() {
-		user_session, err := ScanUserSessionRow(rows)
+		userSession, err := ScanUserSessionRow(rows)
 		if err != nil {
 			return nil, err
 		}
-		user, err := GetUserById(db, user_session.UserId)
+		user, err := GetUserById(db, userSession.UserId)
 		if err != nil {
 			return nil, err
 		}
-		user_session.User = user
-		return user_session, nil
+		userSession.User = user
+		return userSession, nil
 	}
-	return nil, errors.New("No session was found")
+	return nil, nil
 }
 
 func GetUserSessionById(db *sql.DB, id int64) (*models.UserSession, error) {
@@ -67,18 +66,18 @@ func GetUserSessionById(db *sql.DB, id int64) (*models.UserSession, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		user_session, err := ScanUserSessionRow(rows)
+		userSession, err := ScanUserSessionRow(rows)
 		if err != nil {
 			return nil, err
 		}
-		user, err := GetUserById(db, user_session.UserId)
+		user, err := GetUserById(db, userSession.UserId)
 		if err != nil {
 			return nil, err
 		}
-		user_session.User = user
-		return user_session, nil
+		userSession.User = user
+		return userSession, nil
 	}
-	return nil, errors.New("No session was found")
+	return nil, nil
 }
 
 func CreateUserSession(db *sql.DB, user models.User) (*models.UserSession, error) {

@@ -9,6 +9,6 @@ createAuthUserProvider(user.value)
 
 <template>
   <AuthGuard>
-    <slot></slot>
+    <router-view></router-view>
   </AuthGuard>
 </template>

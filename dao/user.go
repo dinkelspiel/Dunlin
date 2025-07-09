@@ -47,7 +47,7 @@ func GetUserById(db *sql.DB, userId int64) (*models.User, error) {
 	if rows.Next() {
 		return ScanUserRow(rows)
 	}
-	return nil, errors.New("No user was found")
+	return nil, nil
 }
 
 func GetUserByEmail(db *sql.DB, email string) (*models.User, error) {
@@ -60,7 +60,7 @@ func GetUserByEmail(db *sql.DB, email string) (*models.User, error) {
 	if rows.Next() {
 		return ScanUserRow(rows)
 	}
-	return nil, errors.New("No user was found")
+	return nil, nil
 }
 
 func GetAmountOfUsers(db *sql.DB) (*int, error) {
@@ -79,7 +79,7 @@ func GetAmountOfUsers(db *sql.DB) (*int, error) {
 
 		return &count, nil
 	}
-	return nil, errors.New("Unable to get count of users")
+	return nil, errors.New("unable to get count of users")
 }
 
 func CreateUser(db *sql.DB, user models.User) (*models.User, error) {
