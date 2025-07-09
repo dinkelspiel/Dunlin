@@ -1,0 +1,52 @@
+package routers
+
+import (
+	"database/sql"
+	"net/http"
+
+	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/models"
+	"github.com/gin-gonic/gin"
+)
+
+type SetupBody struct {
+	AdminUsername string `json:"adminUsername" binding:"required"`
+	AdminEmail    string `json:"adminEmail" binding:"required"`
+}
+
+func SetupRouter(v1 *gin.RouterGroup, db *sql.DB) {
+	v1.POST("/setup", func(c *gin.Context) {
+		users_count, err := dao.GetAmountOfUsers(db)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if *users_count > 0 {
+			c.AbortWithStatus(404)
+			return
+		}
+
+		var body SetupBody
+		if err := c.BindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		user := models.User{
+			Username: body.AdminUsername,
+			Email:    body.AdminEmail,
+		}
+		_, err = dao.CreateUser(db, user)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "OpenCDN successfully initialized.",
+		})
+	})
+}

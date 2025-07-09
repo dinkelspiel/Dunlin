@@ -1,0 +1,25 @@
+name: cdn
+services:
+    mariadb:
+        image: mariadb
+        restart: always
+        ports:
+            - 3306:3306
+        environment:
+            MYSQL_ROOT_PASSWORD: cdn
+            MYSQL_PASSWORD: cdn
+            MYSQL_USER: cdn
+            MYSQL_DATABASE: cdn
+        volumes:
+            - mariadb:/var/lib/mysql
+    web:
+        env_file:
+            - "./.env"
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8080:8080"
+        restart: unless-stopped
+volumes:
+    mariadb: ~
