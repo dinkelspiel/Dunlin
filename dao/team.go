@@ -62,7 +62,7 @@ func GetTeamsByOwner(db *sql.DB, owner models.User) (*[]models.Team, error) {
 
 	var teams []models.Team
 
-	if rows.Next() {
+	for rows.Next() {
 		team, err := scanTeamRow(rows, db)
 		if err != nil {
 			return nil, err
@@ -106,7 +106,7 @@ func GetTeamMembers(db *sql.DB, team models.Team) (*[]models.User, error) {
 	defer rows.Close()
 
 	var users []models.User
-	if rows.Next() {
+	for rows.Next() {
 		user, err := ScanUserRow(rows)
 		if err != nil {
 			return nil, err

@@ -35,8 +35,7 @@ func RegisterUser(db *sql.DB, _user models.User) (*models.User, error) {
 		Slug:    slug.Make(name),
 		OwnerId: *user.Id,
 	}
-
-	_, err = dao.CreateTeam(db, team)
+	_, err = CreateTeam(db, team)
 	if err != nil {
 		return nil, err
 	}

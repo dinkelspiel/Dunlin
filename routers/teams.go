@@ -10,11 +10,10 @@ import (
 )
 
 func TeamsRouter(v1 *gin.RouterGroup, db *sql.DB) {
-	// teams := v1.Group("/teams")
 	v1.GET("/teams", func(c *gin.Context) {
-		slug := c.Query("slug")
+		teamSlug := c.Query("slug")
 
-		team, err := dao.GetTeamBySlug(db, slug)
+		team, err := dao.GetTeamBySlug(db, teamSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -24,7 +23,7 @@ func TeamsRouter(v1 *gin.RouterGroup, db *sql.DB) {
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "Found team",
 			"team":    models.SerializeTeam(*team),
 		})

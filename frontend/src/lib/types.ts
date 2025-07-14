@@ -37,3 +37,8 @@ export type TeamResponse = {
   message: string
   team: Team
 }
+
+export type TeamProjectResponse = {
+  message: string
+  teamProject: TeamProject
+}

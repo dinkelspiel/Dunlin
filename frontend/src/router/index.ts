@@ -5,6 +5,16 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/auth/login',
+      name: 'login',
+      component: () => import('../views/auth/Login.vue'),
+    },
+    {
+      path: '/setup',
+      name: 'setup',
+      component: () => import('../views/Setup.vue'),
+    },
+    {
       path: '/-',
       component: AuthUserProvider,
       children: [
@@ -19,21 +29,11 @@ const router = createRouter({
           component: () => import('../views/Team.vue'),
         },
         {
-          path: ':team/:project',
+          path: ':team/:project/:filepath(.*)*',
           name: 'project',
           component: () => import('../views/Dashboard.vue'),
         },
       ],
-    },
-    {
-      path: '/auth/login',
-      name: 'login',
-      component: () => import('../views/auth/Login.vue'),
-    },
-    {
-      path: '/setup',
-      name: 'setup',
-      component: () => import('../views/Setup.vue'),
     },
   ],
 })

@@ -11,8 +11,9 @@ const { user } = useAuthUser()
 </script>
 
 <template>
-  <div class="grid grid-cols-[min-content_1fr] min-h-screen">
-    <div class="w-[270px] border-e border-e-neutral-200 p-4 flex flex-col gap-8">
+  <!-- grid-cols-[min-content_1fr] -->
+  <div class="grid min-h-screen">
+    <!-- <div class="w-[270px] border-e border-e-neutral-200 p-4 flex flex-col gap-8">
       <div class="flex justify-between items-center">
         <Logo />
         <Button variant="ghost" size="icon">
@@ -25,7 +26,7 @@ const { user } = useAuthUser()
           <Archive class="size-4 stroke-neutral-600" /> Files
         </Button>
       </div>
-    </div>
+    </div> -->
     <div>
       <slot></slot>
     </div>

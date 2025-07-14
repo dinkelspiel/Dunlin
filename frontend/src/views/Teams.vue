@@ -61,7 +61,7 @@ const {
 <template>
   <DashboardLayout>
     <header class="h-[72px] py-4 px-6 flex justify-between items-center">
-      <div class="flex gap-4 font-medium items-center">Teams</div>
+      <div class="flex gap-4 font-medium items-center"><Logo /> Teams</div>
       <div class="flex items-center gap-4">
         <!-- <div class="relative w-[350px] h-8">
           <Search class="size-4 stroke-neutral-400 absolute top-1/2 -translate-y-1/2 left-2" />
@@ -81,8 +81,9 @@ const {
         </TableHeader>
         <TableBody>
           <TableRow
+            v-bind:key="team.id"
             v-for="team in teams.teams"
-            @click="() => router.push(`/-/${team.slug}`)"
+            @click="() => router.push(`/${team.slug}`)"
             class="cursor-pointer hover:underline"
           >
             <TableCell>{{ team.name }}</TableCell>

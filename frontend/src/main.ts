@@ -7,6 +7,8 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 
 const app = createApp(App)
 
+app.config.globalProperties.window = window
+
 app.use(router)
 app.use(VueQueryPlugin)
 

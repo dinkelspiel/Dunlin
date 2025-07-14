@@ -61,8 +61,7 @@ func GetTeamProjectsByTeam(db *sql.DB, team models.Team) (*[]models.TeamProject,
 	defer rows.Close()
 
 	var teamProjects []models.TeamProject
-
-	if rows.Next() {
+	for rows.Next() {
 		team, err := scanTeamProjectRow(rows, db)
 		if err != nil {
 			return nil, err
@@ -72,8 +71,8 @@ func GetTeamProjectsByTeam(db *sql.DB, team models.Team) (*[]models.TeamProject,
 	return &teamProjects, nil
 }
 
-func GetTeamProjectsInTeamByName(db *sql.DB, team models.Team, name string) (*models.TeamProject, error) {
-	rows, err := db.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE name = ? AND team_id = ?", name, team.Id)
+func GetTeamProjectInTeamBySlug(db *sql.DB, team models.Team, slug string) (*models.TeamProject, error) {
+	rows, err := db.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE slug = ? AND team_id = ?", slug, team.Id)
 	if err != nil {
 		return nil, err
 	}

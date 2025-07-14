@@ -3,7 +3,16 @@ import Logo from '@/components/ui/Logo.vue'
 import { useAuthUser } from '@/router/auth/AuthUserProvider'
 import { Label } from '@/components/ui/label'
 import Button from '@/components/ui/Button.vue'
-import { Archive, ChevronDown, Home, PanelLeft, Plus, Search, Upload } from 'lucide-vue-next'
+import {
+  Archive,
+  ChevronDown,
+  Home,
+  Loader2,
+  PanelLeft,
+  Plus,
+  Search,
+  Upload,
+} from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import {
   TableHeader,
@@ -60,16 +69,30 @@ const {
 const { data: team } = useQuery<TeamResponse>({
   queryKey: ['team', route.params.team],
   queryFn: async () => {
-    const response = await fetch(`http://localhost:8080/api/v1/teams?slug=${route.params.team}`, {
+    const response = await fetch(`http://localhost:8080/api/v1/teams/${route.params.team}`, {
       credentials: 'include',
     })
     if (!response.ok) {
-      router.push('/-/')
+      // router.push('/auth/l')
       throw new Error((await response.json()).message)
     }
     return response.json() as Promise<TeamResponse>
   },
 })
+
+// const { data: project } = useQuery<TeamProjectsResponse>({
+//   queryKey: ['team', route.params.team],
+//   queryFn: async () => {
+//     const response = await fetch(`http://localhost:8080/api/v1/teams/${route.params.team}`, {
+//       credentials: 'include',
+//     })
+//     if (!response.ok) {
+//       router.push('/')
+//       throw new Error((await response.json()).message)
+//     }
+//     return response.json() as Promise<TeamResponse>
+//   },
+// })
 
 const projectName = ref('')
 const queryClient = useQueryClient()
@@ -83,6 +106,7 @@ const createProject = useMutation({
         method: 'POST',
         credentials: 'include',
         body: JSON.stringify({
+          teamSlug: route.params.team,
           projectName,
         }),
       },
@@ -94,21 +118,25 @@ const createProject = useMutation({
   },
   onSuccess() {
     queryClient.invalidateQueries({ queryKey: ['teamProjects'] })
+    createProjectOpen.value = false
   },
 })
+
+const createProjectOpen = ref(false)
 </script>
 
 <template>
   <DashboardLayout>
     <header class="h-[72px] py-4 px-6 flex justify-between items-center">
       <div class="flex gap-4 font-medium items-center">
+        <Logo />
         <div class="flex gap-2 items-center cursor-pointer">
           {{ team && team.team.name }}
           <ChevronDown class="size-4 stroke-neutral-600" />
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <Dialog>
+        <Dialog v-model:open="createProjectOpen">
           <DialogTrigger :as-child="true">
             <Button size="sm"><Plus class="size-4" /> New Project </Button>
           </DialogTrigger>
@@ -127,7 +155,8 @@ const createProject = useMutation({
       </div>
     </header>
     <div class="p-4">
-      <Table class="rounded-t-lg overflow-clip">
+      <Loader2 class="animate-spin size-4" v-if="teamProjectsIsLoading" />
+      <Table class="rounded-t-lg overflow-clip" v-if="teamProjects">
         <TableHeader>
           <TableRow>
             <TableHead> Name </TableHead>
@@ -136,7 +165,7 @@ const createProject = useMutation({
         </TableHeader>
         <TableBody>
           <TableRow
-            v-if="teamProjects"
+            v-bind:key="teamProject.id"
             v-for="teamProject in teamProjects.teamProjects"
             @click="() => router.push(`/-/${route.params.team}/${teamProject.slug}`)"
             class="cursor-pointer hover:underline"
