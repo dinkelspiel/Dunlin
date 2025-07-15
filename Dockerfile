@@ -1,6 +1,8 @@
 # Build stage
 FROM alpine:3.21
 
+ARG VITE_API_URL
+
 RUN apk add --no-cache \
     "go=~1.23" \
     nodejs \
@@ -12,6 +14,7 @@ WORKDIR /app
 
 COPY frontend ./frontend
 WORKDIR /app/frontend
+ENV VITE_API_URL=${VITE_API_URL}
 RUN echo Y | pnpm install && pnpm build
 
 WORKDIR /app
