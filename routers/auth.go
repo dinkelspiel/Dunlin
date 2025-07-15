@@ -9,6 +9,7 @@ import (
 	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
+	"github.com/dinkelspiel/cdn/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -90,7 +91,16 @@ func AuthRouter(v1 *gin.RouterGroup, db *db.DB) {
 			return
 		}
 
-		c.SetCookie("cdn-session-token", userSession.Token, 999999, "/", "localhost", false, true)
+		config, _ := services.LoadConfig()
+
+		var secure bool
+		if config.AppUrl == "localhost" {
+			secure = false
+		} else {
+			secure = true
+		}
+
+		c.SetCookie("cdn-session-token", userSession.Token, 999999, "/", config.AppUrl, secure, true)
 
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "Log in successful",
