@@ -23,11 +23,19 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import { useQuery } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
-import { watchEffect } from 'vue'
+import { ref, watch, watchEffect } from 'vue'
 import { StatusCodes } from 'http-status-codes'
 import type { StatusError, Team, TeamsResponse } from '@/lib/types'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 const { authUser } = useAuthUser()
 
@@ -41,7 +49,7 @@ const {
 } = useQuery<TeamsResponse>({
   queryKey: ['teams'],
   queryFn: async () => {
-    const response = await fetch('http://localhost:8080/api/v1/user/teams', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/user/teams`, {
       credentials: 'include',
     })
     if (!response.ok) {
@@ -51,6 +59,39 @@ const {
       throw new Error((await response.json()).message)
     }
     return response.json() as Promise<TeamsResponse>
+  },
+})
+
+watch([authUser], () => {
+  if (!authUser.value) {
+    document.title = 'Teams for'
+    return
+  }
+  document.title = `Teams for ${authUser.value?.username}`
+})
+
+const createTeamOpen = ref(false)
+const teamName = ref('')
+const queryClient = useQueryClient()
+
+const createTeam = useMutation({
+  mutationKey: ['createProject'],
+  mutationFn: async (teamName: string) => {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/teams`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({
+        teamName,
+      }),
+    })
+    if (!response.ok) {
+      throw new Error((await response.json()).message)
+    }
+    return response.json()
+  },
+  onSuccess() {
+    queryClient.invalidateQueries({ queryKey: ['teams'] })
+    createTeamOpen.value = false
   },
 })
 </script>
@@ -65,12 +106,28 @@ const {
         </router-link>
         Teams
       </div>
+
       <div class="flex items-center gap-4">
+        <Dialog v-model:open="createTeamOpen">
+          <DialogTrigger :as-child="true">
+            <Button size="sm"><Plus class="size-4" /> New Team </Button>
+          </DialogTrigger>
+          <DialogContent :show-close="true">
+            <DialogHeader>
+              <DialogTitle> New Team </DialogTitle>
+            </DialogHeader>
+            <form class="grid gap-4" @submit.prevent="() => createTeam.mutate(teamName)">
+              <Input v-model="teamName" placeholder="Name" />
+              <DialogFooter>
+                <Button type="submit">Create</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
         <!-- <div class="relative w-[350px] h-8">
           <Search class="size-4 stroke-neutral-400 absolute top-1/2 -translate-y-1/2 left-2" />
           <Input class="px-8" placeholder="Search" />
         </div> -->
-        <Button size="sm"><Plus class="size-4" /> New Team </Button>
       </div>
     </header>
     <div class="p-4">

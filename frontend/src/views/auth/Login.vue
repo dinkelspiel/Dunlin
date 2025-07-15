@@ -3,13 +3,17 @@ import Button from '@/components/ui/Button.vue'
 import { Input } from '@/components/ui/input'
 import { H3, SubText, P } from '@/components/typography'
 import Logo from '@/components/ui/Logo.vue'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { PinInput, PinInputGroup, PinInputSlot } from '@/components/ui/pin-input'
 import { useRouter } from 'vue-router'
 
+onMounted(async () => {
+  document.title = 'Log in'
+})
+
 const verificationCode = ref<string[]>([])
 const handleVerificationCodeComplete = async (e: string[]) => {
-  const response = await fetch('http://localhost:8080/api/v1/auth/verify-code', {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/verify-code`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -30,7 +34,7 @@ const message = ref<string | null>(null)
 const router = useRouter()
 
 const onSubmitSendCode = async () => {
-  const response = await fetch('http://localhost:8080/api/v1/auth/send-code', {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/send-code`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

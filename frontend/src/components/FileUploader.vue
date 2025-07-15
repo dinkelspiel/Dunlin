@@ -28,7 +28,7 @@ const handleFileChange = async (event: Event): Promise<void> => {
 
   try {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${props.teamSlug}/projects/${props.projectSlug}/files${props.targetPath}${file.name}`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${props.teamSlug}/projects/${props.projectSlug}/files${props.targetPath}${file.name}`,
       {
         credentials: 'include',
         method: 'PUT',

@@ -13,7 +13,9 @@ const adminEmail = ref('')
 const router = useRouter()
 
 onMounted(async () => {
-  const response = await fetch('http://localhost:8080/api/v1/setup', {
+  document.title = 'Setup'
+
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/setup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -27,7 +29,7 @@ onMounted(async () => {
 })
 
 const onSubmit = async () => {
-  const response = await fetch('http://localhost:8080/api/v1/setup', {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/setup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

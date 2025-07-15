@@ -28,7 +28,7 @@ import DashboardLayout from '@/components/DashboardLayout.vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { TeamProjectResponse, TeamResponse } from '@/lib/types'
 import { useRoute, useRouter } from 'vue-router'
-import { computed, Fragment, ref } from 'vue'
+import { computed, Fragment, onMounted, ref, watch } from 'vue'
 import { watchDeep } from '@vueuse/core'
 import normalize from 'path-normalize'
 import TeamsDropdown from '@/components/header/TeamsDropdown.vue'
@@ -49,6 +49,9 @@ import Breadcrumbs from '@/components/Breadcrumbs.vue'
 const { authUser } = useAuthUser()
 const route = useRoute()
 const router = useRouter()
+const teamSlug = computed(() => route.params.team as string)
+const projectSlug = computed(() => route.params.project as string)
+const apiUrl = import.meta.env.VITE_API_URL
 
 type File = {
   type: 'dir' | 'file'
@@ -63,9 +66,9 @@ type FilesResponse = {
 }
 
 const { data: team } = useQuery<TeamResponse>({
-  queryKey: ['team', route.params.team],
+  queryKey: ['team', teamSlug],
   queryFn: async () => {
-    const response = await fetch(`http://localhost:8080/api/v1/teams/${route.params.team}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/teams/${teamSlug.value}`, {
       credentials: 'include',
     })
     if (!response.ok) {
@@ -77,10 +80,10 @@ const { data: team } = useQuery<TeamResponse>({
 })
 
 const { data: teamProject } = useQuery<TeamProjectResponse>({
-  queryKey: ['teamProject', route.params.team, route.params.project],
+  queryKey: ['teamProject', teamSlug, projectSlug],
   queryFn: async () => {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${route.params.team}/projects/${route.params.project}`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${teamSlug.value}/projects/${projectSlug.value}`,
       {
         credentials: 'include',
       },
@@ -100,7 +103,7 @@ const createFolder = useMutation({
   mutationKey: ['createProject'],
   mutationFn: async (path: string) => {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${route.params.team}/projects/${route.params.project}/folders`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${teamSlug.value}/projects/${projectSlug.value}/folders`,
       {
         method: 'POST',
         credentials: 'include',
@@ -131,9 +134,9 @@ const rawFilepath = computed(() =>
 const filepathWithSlashes = computed(() => (rawFilepath.value ? `/${rawFilepath.value}/` : '/'))
 
 const { data: files } = useQuery<FilesResponse>({
-  queryKey: ['files', route.params.team, route.params.project, filepathWithSlashes],
+  queryKey: ['files', teamSlug, projectSlug, filepathWithSlashes],
   queryFn: async () => {
-    const url = `http://localhost:8080/api/v1/teams/${route.params.team}/projects/${route.params.project}/files/${filepathWithSlashes.value}`
+    const url = `${import.meta.env.VITE_API_URL}/api/v1/teams/${teamSlug.value}/projects/${projectSlug.value}/files/${filepathWithSlashes.value}`
     const response = await fetch(url, {
       credentials: 'include',
     })
@@ -143,6 +146,14 @@ const { data: files } = useQuery<FilesResponse>({
     }
     return response.json() as Promise<FilesResponse>
   },
+})
+
+watch([team, teamProject], () => {
+  if (!team.value && !teamProject.value) {
+    document.title = 'Index of'
+    return
+  }
+  document.title = `Index of /${team.value?.team.slug}/${teamProject.value?.teamProject.slug}${filepathWithSlashes.value}`
 })
 </script>
 
@@ -278,7 +289,9 @@ const { data: files } = useQuery<FilesResponse>({
                     `/-/${route.params.team}/${route.params.project}${filepathWithSlashes}${file.name}`,
                   )
                 } else {
-                  window.location.href = `http://localhost:8080/files/${route.params.team}/${route.params.project}${filepathWithSlashes}${file.name}`
+                  // Window is added but the types don't seem to work see /frontend/env.d.ts
+                  // @ts-ignore
+                  window.location.href = `${apiUrl}/files/${route.params.team}/${route.params.project}${filepathWithSlashes}${file.name}`
                 }
               }
             "

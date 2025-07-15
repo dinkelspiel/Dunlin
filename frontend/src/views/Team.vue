@@ -42,12 +42,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import TeamsDropdown from '@/components/header/TeamsDropdown.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { authUser } = useAuthUser()
+const teamSlug = computed(() => route.params.team as string)
 
 const {
   data: teamProjects,
@@ -55,10 +56,10 @@ const {
   error: teamProjectsError,
   status: teamProjectsStatus,
 } = useQuery<TeamProjectsResponse>({
-  queryKey: ['teamProjects', route.params.team],
+  queryKey: ['teamProjects', teamSlug],
   queryFn: async () => {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${route.params.team}/projects`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${route.params.team}/projects`,
       {
         credentials: 'include',
       },
@@ -74,11 +75,14 @@ const {
 })
 
 const { data: team } = useQuery<TeamResponse>({
-  queryKey: ['team', route.params.team],
+  queryKey: ['team', teamSlug],
   queryFn: async () => {
-    const response = await fetch(`http://localhost:8080/api/v1/teams/${route.params.team}`, {
-      credentials: 'include',
-    })
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${route.params.team}`,
+      {
+        credentials: 'include',
+      },
+    )
     if (!response.ok) {
       // router.push('/auth/l')
       throw new Error((await response.json()).message)
@@ -108,7 +112,7 @@ const createProject = useMutation({
   mutationKey: ['createProject'],
   mutationFn: async (projectName: string) => {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${route.params.team}/projects`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${route.params.team}/projects`,
       {
         method: 'POST',
         credentials: 'include',
@@ -130,6 +134,14 @@ const createProject = useMutation({
 })
 
 const createProjectOpen = ref(false)
+
+watch([team], () => {
+  if (!team.value) {
+    document.title = 'Projects for'
+    return
+  }
+  document.title = `Projects for ${team.value.team.name}`
+})
 </script>
 
 <template>

@@ -22,7 +22,7 @@ const {
   queryKey: ['teamProjects', route.params.team],
   queryFn: async () => {
     const response = await fetch(
-      `http://localhost:8080/api/v1/teams/${route.params.team}/projects`,
+      `${import.meta.env.VITE_API_URL}/api/v1/teams/${route.params.team}/projects`,
       {
         credentials: 'include',
       },

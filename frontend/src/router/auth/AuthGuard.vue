@@ -9,7 +9,7 @@ const router = useRouter()
 const route = useRoute()
 
 onMounted(async () => {
-  const res = await fetch('http://localhost:8080/api/v1/auth/check-session', {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/check-session`, {
     credentials: 'include',
   })
   // if (!res.ok) router.push('/auth/login')

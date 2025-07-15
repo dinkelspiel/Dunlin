@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/user"
+	"path/filepath"
 	"time"
 
 	"github.com/dinkelspiel/cdn/db"
@@ -66,6 +68,20 @@ func setupRouter(db *db.DB) *gin.Engine {
 	routers.TeamRouter(v1, db)
 	routers.TeamProjectRouter(v1, db)
 	routers_user.UserTeamsRouter(v1, db)
+
+	r.Static("/assets", "./frontend/dist/assets")
+	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
+
+	r.NoRoute(func(c *gin.Context) {
+		indexPath := filepath.Join("./frontend/dist", "index.html")
+
+		if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+			c.String(http.StatusNotFound, "index.html not found")
+			return
+		}
+
+		c.File(indexPath)
+	})
 
 	return r
 }
