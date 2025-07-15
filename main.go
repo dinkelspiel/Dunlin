@@ -45,7 +45,7 @@ func setupRouter(db *db.DB) *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		AllowOrigins:     []string{"https://cdn.keii.dev/", "https://github.com", "http://localhost:5173"},
+		AllowOrigins:     []string{"https://files.keii.dev/", "https://github.com", "http://localhost:5173"},
 		MaxAge:           12 * time.Hour,
 	}))
 
