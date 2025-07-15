@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 )
 
@@ -36,8 +37,8 @@ func ScanUserSessionRow(rows *sql.Rows) (*models.UserSession, error) {
 	}
 }
 
-func GetUserSessionByToken(db *sql.DB, token string) (*models.UserSession, error) {
-	rows, err := db.Query("SELECT id, user_id, token, updated_at, created_at FROM user_sessions WHERE token = ?", token)
+func GetUserSessionByToken(db *db.DB, token string) (*models.UserSession, error) {
+	rows, err := db.MariaDB.Query("SELECT id, user_id, token, updated_at, created_at FROM user_sessions WHERE token = ?", token)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +59,8 @@ func GetUserSessionByToken(db *sql.DB, token string) (*models.UserSession, error
 	return nil, nil
 }
 
-func GetUserSessionById(db *sql.DB, id int64) (*models.UserSession, error) {
-	rows, err := db.Query("SELECT id, user_id, token, updated_at, created_at FROM user_sessions WHERE id = ?", id)
+func GetUserSessionById(db *db.DB, id int64) (*models.UserSession, error) {
+	rows, err := db.MariaDB.Query("SELECT id, user_id, token, updated_at, created_at FROM user_sessions WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +81,10 @@ func GetUserSessionById(db *sql.DB, id int64) (*models.UserSession, error) {
 	return nil, nil
 }
 
-func CreateUserSession(db *sql.DB, user models.User) (*models.UserSession, error) {
+func CreateUserSession(db *db.DB, user models.User) (*models.UserSession, error) {
 	insertUser := "INSERT INTO user_sessions(user_id, token) VALUES(?, UUID())"
 
-	res, err := db.Exec(insertUser, user.Id)
+	res, err := db.MariaDB.Exec(insertUser, user.Id)
 	if err != nil {
 		return nil, err
 	}

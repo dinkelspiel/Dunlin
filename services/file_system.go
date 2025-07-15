@@ -47,7 +47,7 @@ func GetTeamProjectFile(teamProject models.TeamProject, relativePath string) ([]
 	return storage.ReadFile(path)
 }
 
-func EnsureFoldersExist() error {
+func EnsureFoldersExists() error {
 	config, _ := LoadConfig()
 	err := os.MkdirAll(config.StorageUrl, os.ModePerm)
 	if err != nil {
@@ -70,9 +70,11 @@ func CreateTeamFolder(team models.Team) error {
 	return os.MkdirAll(teamDir, os.ModePerm)
 }
 
-func CreateTeamProjectFolder(teamProject models.TeamProject) error {
-	config, _ := LoadConfig()
+func CreateTeamProjectFolder(teamProject models.TeamProject, relativePath string) (string, error) {
+	fullPath, err := GetFilePathToFileInTeamProject(teamProject, relativePath)
+	if err != nil {
+		return "", err
+	}
 
-	teamProjectDir := fmt.Sprintf("%s/public/%d/%d", config.StorageUrl, *teamProject.Team.Id, *teamProject.Id)
-	return os.MkdirAll(teamProjectDir, os.ModePerm)
+	return fullPath, os.MkdirAll(fullPath, os.ModePerm)
 }

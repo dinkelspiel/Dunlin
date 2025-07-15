@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 )
 
@@ -36,8 +37,8 @@ func ScanUserAuthCodeRow(rows *sql.Rows) (*models.UserAuthCode, error) {
 	}
 }
 
-func GetUnusedUserAuthCodeByCode(db *sql.DB, code int64) (*models.UserAuthCode, error) {
-	rows, err := db.Query("SELECT id, user_id, code, used, updated_at, created_at FROM user_auth_codes WHERE code = ? AND used = false", code)
+func GetUnusedUserAuthCodeByCode(db *db.DB, code int64) (*models.UserAuthCode, error) {
+	rows, err := db.MariaDB.Query("SELECT id, user_id, code, used, updated_at, created_at FROM user_auth_codes WHERE code = ? AND used = false", code)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +59,10 @@ func GetUnusedUserAuthCodeByCode(db *sql.DB, code int64) (*models.UserAuthCode, 
 	return nil, nil
 }
 
-func CreateUserAuthCode(db *sql.DB, authCode models.UserAuthCode) (*models.UserAuthCode, error) {
+func CreateUserAuthCode(db *db.DB, authCode models.UserAuthCode) (*models.UserAuthCode, error) {
 	insertAuthCode := "INSERT INTO user_auth_codes(user_id, code, used) VALUES(?, ?, ?)"
 
-	res, err := db.Exec(insertAuthCode, authCode.UserId, authCode.Code, authCode.Used)
+	res, err := db.MariaDB.Exec(insertAuthCode, authCode.UserId, authCode.Code, authCode.Used)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +73,10 @@ func CreateUserAuthCode(db *sql.DB, authCode models.UserAuthCode) (*models.UserA
 	return &result, nil
 }
 
-func UpdateUserAuthCodeToUsed(db *sql.DB, authCode models.UserAuthCode) error {
+func UpdateUserAuthCodeToUsed(db *db.DB, authCode models.UserAuthCode) error {
 	updateAuthCode := "UPDATE user_auth_codes SET used = true WHERE id = ?"
 
-	_, err := db.Exec(updateAuthCode, authCode.Id)
+	_, err := db.MariaDB.Exec(updateAuthCode, authCode.Id)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ import { Archive, ChevronDown, Home, PanelLeft, Search, Upload } from 'lucide-vu
 import { Input } from '@/components/ui/input'
 import { TableHeader, Table, TableRow, TableHead } from '@/components/ui/table'
 
-const { user } = useAuthUser()
+// const { user } = useAuthUser()
 </script>
 
 <template>

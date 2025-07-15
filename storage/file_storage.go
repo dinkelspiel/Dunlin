@@ -2,6 +2,7 @@ package storage
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,13 +30,21 @@ func ListFiles(dirPath string) ([]FSItem, error) {
 
 	var files []FSItem
 	for _, entry := range entries {
-		info, err := entry.Info()
+		fullPath := filepath.Join(dirPath, entry.Name())
+		info, err := os.Lstat(fullPath)
 		if err != nil {
-			continue // optionally log or return error
+			continue
 		}
 
 		itemType := FSFile
-		if info.IsDir() {
+
+		// Handle symlinks
+		if info.Mode()&os.ModeSymlink != 0 {
+			targetInfo, err := os.Stat(fullPath)
+			if err == nil && targetInfo.IsDir() {
+				itemType = FSDir
+			}
+		} else if info.IsDir() {
 			itemType = FSDir
 		}
 
@@ -51,6 +60,10 @@ func ListFiles(dirPath string) ([]FSItem, error) {
 
 func ReadFile(filePath string) ([]byte, error) {
 	return os.ReadFile(filePath)
+}
+
+func CreateDir(filePath string) error {
+	return os.Mkdir(filePath, os.ModePerm)
 }
 
 func SerializeFSItem(fsItem FSItem) gin.H {

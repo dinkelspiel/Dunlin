@@ -1,25 +1,21 @@
 package routers
 
 import (
-	"database/sql"
 	"net/http"
 
-	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
+	"github.com/dinkelspiel/cdn/services"
 	"github.com/gin-gonic/gin"
 )
 
-func TeamsRouter(v1 *gin.RouterGroup, db *sql.DB) {
+func TeamsRouter(v1 *gin.RouterGroup, db *db.DB) {
 	v1.GET("/teams", func(c *gin.Context) {
 		teamSlug := c.Query("slug")
 
-		team, err := dao.GetTeamBySlug(db, teamSlug)
+		team, err := services.GetTeamBySlug(db, teamSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
 			return
 		}
 

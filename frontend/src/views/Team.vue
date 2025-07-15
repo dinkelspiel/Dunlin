@@ -31,6 +31,7 @@ import type {
   TeamProject,
   TeamProjectsResponse,
   TeamResponse,
+  TeamsResponse,
 } from '@/lib/types'
 import { StatusCodes } from 'http-status-codes'
 import {
@@ -42,10 +43,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ref } from 'vue'
+import TeamsDropdown from '@/components/header/TeamsDropdown.vue'
 
-const { user } = useAuthUser()
 const router = useRouter()
 const route = useRoute()
+const { authUser } = useAuthUser()
 
 const {
   data: teamProjects,
@@ -55,7 +57,12 @@ const {
 } = useQuery<TeamProjectsResponse>({
   queryKey: ['teamProjects', route.params.team],
   queryFn: async () => {
-    const response = await fetch(`http://localhost:8080/api/v1/teams/${route.params.team}/projects`)
+    const response = await fetch(
+      `http://localhost:8080/api/v1/teams/${route.params.team}/projects`,
+      {
+        credentials: 'include',
+      },
+    )
     if (!response.ok) {
       if (response.status === StatusCodes.UNAUTHORIZED) {
         router.push('/auth/login')
@@ -130,17 +137,22 @@ const createProjectOpen = ref(false)
     <header class="h-[72px] py-4 px-6 flex justify-between items-center">
       <div class="flex gap-4 font-medium items-center">
         <Logo />
-        <div class="flex gap-2 items-center cursor-pointer">
-          {{ team && team.team.name }}
-          <ChevronDown class="size-4 stroke-neutral-600" />
-        </div>
+        <router-link :to="`/-`">
+          <div class="text-neutral-400">/</div>
+        </router-link>
+        <TeamsDropdown>
+          <div class="flex gap-2 items-center cursor-pointer">
+            {{ team && team.team.name }}
+            <ChevronDown class="size-4 stroke-neutral-600" />
+          </div>
+        </TeamsDropdown>
       </div>
       <div class="flex items-center gap-4">
         <Dialog v-model:open="createProjectOpen">
           <DialogTrigger :as-child="true">
             <Button size="sm"><Plus class="size-4" /> New Project </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent :show-close="true">
             <DialogHeader>
               <DialogTitle> New Project </DialogTitle>
             </DialogHeader>

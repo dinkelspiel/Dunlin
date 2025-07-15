@@ -1,16 +1,16 @@
 package routers_user
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/gin-gonic/gin"
 )
 
-func UserTeamsRouter(v1 *gin.RouterGroup, db *sql.DB) {
+func UserTeamsRouter(v1 *gin.RouterGroup, db *db.DB) {
 	user := v1.Group("/user")
 	user.Use(middleware.AuthMiddleware(db))
 	user.GET("/teams", func(c *gin.Context) {
@@ -19,10 +19,6 @@ func UserTeamsRouter(v1 *gin.RouterGroup, db *sql.DB) {
 		teams, err := dao.GetTeamsByOwner(db, authUser)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if teams == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No teams found"})
 			return
 		}
 

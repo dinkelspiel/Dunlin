@@ -8,9 +8,9 @@ export type AuthUser = {
 }
 
 type AuthUserContext = {
-  user: Readonly<{ value: AuthUser | null }>
-  setUser: (newUser: AuthUser) => void
-  clearUser: () => void
+  authUser: Readonly<{ value: AuthUser | null }>
+  setAuthUser: (newUser: AuthUser | null) => void
+  clearAuthUser: () => void
 }
 
 const AuthUserSymbol: InjectionKey<AuthUserContext> = Symbol('AuthUser')
@@ -20,18 +20,18 @@ export function createAuthUserProvider(initialUser: AuthUser | null = null) {
     value: initialUser,
   })
 
-  const setUser = (newUser: AuthUser) => {
+  const setAuthUser = (newUser: AuthUser | null) => {
     state.value = newUser
   }
 
-  const clearUser = () => {
+  const clearAuthUser = () => {
     state.value = null
   }
 
   provide(AuthUserSymbol, {
-    user: readonly(state),
-    setUser,
-    clearUser,
+    authUser: readonly(state),
+    setAuthUser,
+    clearAuthUser,
   })
 }
 

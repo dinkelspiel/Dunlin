@@ -1,10 +1,10 @@
 package routers
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/dinkelspiel/cdn/services"
 	"github.com/gin-gonic/gin"
@@ -15,7 +15,7 @@ type SetupBody struct {
 	AdminEmail    string `json:"adminEmail" binding:"required"`
 }
 
-func SetupRouter(v1 *gin.RouterGroup, db *sql.DB) {
+func SetupRouter(v1 *gin.RouterGroup, db *db.DB) {
 	v1.POST("/setup", func(c *gin.Context) {
 		users_count, err := dao.GetAmountOfUsers(db)
 		if err != nil {

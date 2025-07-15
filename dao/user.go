@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 )
 
@@ -37,8 +38,8 @@ func ScanUserRow(rows *sql.Rows) (*models.User, error) {
 	}
 }
 
-func GetUserById(db *sql.DB, userId int64) (*models.User, error) {
-	rows, err := db.Query("SELECT id, username, email, updated_at, created_at FROM users WHERE id = ?", userId)
+func GetUserById(db *db.DB, userId int64) (*models.User, error) {
+	rows, err := db.MariaDB.Query("SELECT id, username, email, updated_at, created_at FROM users WHERE id = ?", userId)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func GetUserById(db *sql.DB, userId int64) (*models.User, error) {
 	return nil, nil
 }
 
-func GetUserByEmail(db *sql.DB, email string) (*models.User, error) {
-	rows, err := db.Query("SELECT id, username, email, updated_at, created_at FROM users WHERE email = ?", email)
+func GetUserByEmail(db *db.DB, email string) (*models.User, error) {
+	rows, err := db.MariaDB.Query("SELECT id, username, email, updated_at, created_at FROM users WHERE email = ?", email)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +64,8 @@ func GetUserByEmail(db *sql.DB, email string) (*models.User, error) {
 	return nil, nil
 }
 
-func GetAmountOfUsers(db *sql.DB) (*int, error) {
-	rows, err := db.Query("SELECT COUNT(id) AS count FROM users")
+func GetAmountOfUsers(db *db.DB) (*int, error) {
+	rows, err := db.MariaDB.Query("SELECT COUNT(id) AS count FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -82,10 +83,10 @@ func GetAmountOfUsers(db *sql.DB) (*int, error) {
 	return nil, errors.New("unable to get count of users")
 }
 
-func CreateUser(db *sql.DB, user models.User) (*models.User, error) {
+func CreateUser(db *db.DB, user models.User) (*models.User, error) {
 	insertUser := "INSERT INTO users(username, email) VALUES(?, ?)"
 
-	res, err := db.Exec(insertUser, user.Username, user.Email)
+	res, err := db.MariaDB.Exec(insertUser, user.Username, user.Email)
 	if err != nil {
 		return nil, err
 	}

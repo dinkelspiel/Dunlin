@@ -58,3 +58,16 @@ CREATE TABLE IF NOT EXISTS `team_projects` (
     `updated_at` TIMESTAMP,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `cached_images` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `width` INT NOT NULL,
+    `height` INT NOT NULL,
+    `cache_file` VARCHAR(64) NOT NULL,
+    `directory` VARCHAR(64) NOT NULL,
+    `file` VARCHAR(64) NOT NULL,
+    `size_bytes` INT NOT NULL,
+    `team_project_id` INT NOT NULL,
+    `updated_at` TIMESTAMP,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);

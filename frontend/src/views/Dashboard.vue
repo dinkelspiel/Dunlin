@@ -25,14 +25,28 @@ import {
 } from '@/components/ui/table'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { TeamProjectResponse, TeamResponse } from '@/lib/types'
 import { useRoute, useRouter } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, Fragment, ref } from 'vue'
 import { watchDeep } from '@vueuse/core'
 import normalize from 'path-normalize'
+import TeamsDropdown from '@/components/header/TeamsDropdown.vue'
+import TeamProjectsDropdown from '@/components/header/TeamProjectsDropdown.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import FileUploader from '@/components/FileUploader.vue'
+import { humanFileSize } from '@/lib/bytes'
+import Breadcrumbs from '@/components/Breadcrumbs.vue'
 
-const { user } = useAuthUser()
+const { authUser } = useAuthUser()
 const route = useRoute()
 const router = useRouter()
 
@@ -46,15 +60,6 @@ type File = {
 type FilesResponse = {
   message: string
   files: File[]
-}
-
-function sortFiles(files: File[]): File[] {
-  return files.sort((a, b) => {
-    if (a.type !== b.type) {
-      return a.type === 'dir' ? 1 : -1
-    }
-    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-  })
 }
 
 const { data: team } = useQuery<TeamResponse>({
@@ -88,6 +93,34 @@ const { data: teamProject } = useQuery<TeamProjectResponse>({
   },
 })
 
+const createFolderOpen = ref(false)
+const folderPath = ref('')
+
+const createFolder = useMutation({
+  mutationKey: ['createProject'],
+  mutationFn: async (path: string) => {
+    const response = await fetch(
+      `http://localhost:8080/api/v1/teams/${route.params.team}/projects/${route.params.project}/folders`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({
+          path: `${filepathWithSlashes.value}/${path.startsWith('/') ? path.substring(1) : path}`,
+        }),
+      },
+    )
+    if (!response.ok) {
+      throw new Error((await response.json()).message)
+    }
+    return response.json()
+  },
+  onSuccess() {
+    queryClient.invalidateQueries({ queryKey: ['files'] })
+    createFolderOpen.value = false
+    folderPath.value = ''
+  },
+})
+
 const error = ref('')
 const queryClient = useQueryClient()
 
@@ -98,7 +131,7 @@ const rawFilepath = computed(() =>
 const filepathWithSlashes = computed(() => (rawFilepath.value ? `/${rawFilepath.value}/` : '/'))
 
 const { data: files } = useQuery<FilesResponse>({
-  queryKey: () => ['files', route.params.team, route.params.project, filepathWithSlashes],
+  queryKey: ['files', route.params.team, route.params.project, filepathWithSlashes],
   queryFn: async () => {
     const url = `http://localhost:8080/api/v1/teams/${route.params.team}/projects/${route.params.project}/files/${filepathWithSlashes.value}`
     const response = await fetch(url, {
@@ -119,23 +152,89 @@ const { data: files } = useQuery<FilesResponse>({
       <div class="flex gap-4 font-medium items-center">
         <Logo />
 
-        <div class="flex gap-2 items-center cursor-pointer text-neutral-400">
+        <router-link :to="`/-`" v-if="authUser.value">
+          <div class="text-neutral-400">/</div>
+        </router-link>
+        <div class="text-neutral-400" v-if="!authUser.value">/</div>
+
+        <TeamsDropdown v-if="authUser.value">
+          <div class="flex gap-2 items-center cursor-pointer text-neutral-400">
+            {{ team && team.team.name }}
+            <ChevronDown class="size-4 stroke-neutral-400" />
+          </div>
+        </TeamsDropdown>
+        <div v-if="!authUser.value" class="flex gap-2 items-center text-neutral-400">
           {{ team && team.team.name }}
-          <ChevronDown class="size-4 stroke-neutral-400" />
         </div>
-        <div class="text-neutral-400">/</div>
-        <div class="flex gap-2 items-center cursor-pointer">
+
+        <router-link :to="`/-/${team && team.team.slug}`" v-if="authUser.value">
+          <div class="text-neutral-400">/</div>
+        </router-link>
+        <div class="text-neutral-400" v-if="!authUser.value">/</div>
+
+        <TeamProjectsDropdown v-if="authUser.value">
+          <div class="flex gap-2 items-center cursor-pointer">
+            {{ teamProject && teamProject.teamProject.name }}
+            <ChevronDown class="size-4 stroke-neutral-600" />
+          </div>
+        </TeamProjectsDropdown>
+        <div v-if="!authUser.value" class="flex gap-2 items-center">
           {{ teamProject && teamProject.teamProject.name }}
-          <ChevronDown class="size-4 stroke-neutral-600" />
         </div>
+        <Breadcrumbs
+          :team-slug="route.params.team as string"
+          :project-slug="route.params.project as string"
+          :filepath="filepathWithSlashes"
+        />
       </div>
-      <div class="flex items-center gap-4">
-        <div class="relative w-[350px] h-8">
-          <Search class="size-4 stroke-neutral-400 absolute top-1/2 -translate-y-1/2 left-2" />
-          <Input class="px-8" placeholder="Search" />
-        </div>
-        <Button size="sm"><Upload class="size-4" /> Upload </Button>
-        <Button size="sm"><Folder class="size-4" /> New Folder </Button>
+      <router-link to="/auth/login" v-if="!authUser.value">
+        <Button> Log in </Button>
+      </router-link>
+      <div class="flex items-center gap-4" v-if="authUser.value">
+        <Dialog>
+          <DialogTrigger>
+            <div class="relative w-[350px] h-8">
+              <Search class="size-4 stroke-neutral-400 absolute top-1/2 -translate-y-1/2 left-2" />
+              <Input class="px-8" placeholder="Search" />
+            </div>
+          </DialogTrigger>
+          <DialogContent
+            :show-close="false"
+            class="p-0 gap-0 divide-y divide-y-neutral-200 border-0"
+          >
+            <div class="relative h-12">
+              <Search class="size-4 stroke-neutral-400 absolute top-1/2 -translate-y-1/2 left-2" />
+              <Input class="px-8 h-12 rounded-b-none" placeholder="Search" />
+            </div>
+            <div class="h-[350px] flex flex-col gap-1 overflow-y-scroll p-2 no-scrollbar">
+              <Button class="w-full" size="sm" variant="secondary"> Test </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <FileUploader
+          :team-slug="route.params.team as string"
+          :project-slug="route.params.project as string"
+          :target-path="filepathWithSlashes"
+        />
+        <Dialog v-model:open="createFolderOpen">
+          <DialogTrigger :as-child="true">
+            <Button size="sm"><Folder class="size-4" /> New Folder </Button>
+          </DialogTrigger>
+          <DialogContent :show-close="true">
+            <DialogHeader>
+              <DialogTitle> Create a folder </DialogTitle>
+            </DialogHeader>
+            <form
+              @submit.prevent="() => createFolder.mutate(folderPath)"
+              class="flex flex-col gap-4"
+            >
+              <Input v-model="folderPath" placeholder="Name" />
+              <DialogFooter>
+                <Button> Create </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </header>
     <div class="p-4">
@@ -156,7 +255,6 @@ const { data: files } = useQuery<FilesResponse>({
           <TableRow
             class="hover:underline cursor-pointer"
             v-for="file in [
-              ...sortFiles(files.files),
               rawFilepath !== '.'
                 ? {
                     type: 'dir',
@@ -164,9 +262,14 @@ const { data: files } = useQuery<FilesResponse>({
                     lastModified: '',
                     size: '',
                   }
-                : undefined,
+                : null,
+              ...files.files.slice().sort((a, b) => {
+                if (a.type === 'dir' && b.type !== 'dir') return -1
+                if (a.type !== 'dir' && b.type === 'dir') return 1
+                return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+              }),
             ].filter((a) => !!a)"
-            v-bind:key="file.name"
+            v-bind:key="`${filepathWithSlashes}${file.name}`"
             @click="
               () => {
                 if (file.type === 'dir') {
@@ -191,7 +294,9 @@ const { data: files } = useQuery<FilesResponse>({
               file.lastModified !== '' ? new Date(file.lastModified).toDateString() : ''
             }}</TableCell>
             <TableCell
-              ><div v-if="file.type === 'file'">{{ file.size }} B</div></TableCell
+              ><div v-if="file.type === 'file'">
+                {{ humanFileSize(file.size as number) }}
+              </div></TableCell
             >
           </TableRow>
         </TableBody>

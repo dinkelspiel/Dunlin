@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 )
 
-func scanTeamProjectRow(rows *sql.Rows, db *sql.DB) (*models.TeamProject, error) {
+func scanTeamProjectRow(rows *sql.Rows, db *db.DB) (*models.TeamProject, error) {
 	var teamProject models.TeamProject
 	var createdAt string
 	var updatedAt sql.NullString
@@ -40,8 +41,8 @@ func scanTeamProjectRow(rows *sql.Rows, db *sql.DB) (*models.TeamProject, error)
 	return &teamProject, nil
 }
 
-func GetTeamProjectById(db *sql.DB, id string) (*models.TeamProject, error) {
-	rows, err := db.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE id = ?", id)
+func GetTeamProjectById(db *db.DB, id int64) (*models.TeamProject, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +54,8 @@ func GetTeamProjectById(db *sql.DB, id string) (*models.TeamProject, error) {
 	return nil, nil
 }
 
-func GetTeamProjectsByTeam(db *sql.DB, team models.Team) (*[]models.TeamProject, error) {
-	rows, err := db.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE team_id = ?", team.Id)
+func GetTeamProjectsByTeam(db *db.DB, team models.Team) (*[]models.TeamProject, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE team_id = ?", team.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +72,8 @@ func GetTeamProjectsByTeam(db *sql.DB, team models.Team) (*[]models.TeamProject,
 	return &teamProjects, nil
 }
 
-func GetTeamProjectInTeamBySlug(db *sql.DB, team models.Team, slug string) (*models.TeamProject, error) {
-	rows, err := db.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE slug = ? AND team_id = ?", slug, team.Id)
+func GetTeamProjectInTeamBySlug(db *db.DB, team models.Team, slug string) (*models.TeamProject, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects WHERE slug = ? AND team_id = ?", slug, team.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -84,10 +85,10 @@ func GetTeamProjectInTeamBySlug(db *sql.DB, team models.Team, slug string) (*mod
 	return nil, nil
 }
 
-func CreateTeamProject(db *sql.DB, teamProject models.TeamProject) (*models.TeamProject, error) {
+func CreateTeamProject(db *db.DB, teamProject models.TeamProject) (*models.TeamProject, error) {
 	insertTeamProject := "INSERT INTO team_projects(name, slug, team_id) VALUES(?, ?, ?)"
 
-	res, err := db.Exec(insertTeamProject, teamProject.Name, teamProject.Slug, teamProject.TeamId)
+	res, err := db.MariaDB.Exec(insertTeamProject, teamProject.Name, teamProject.Slug, teamProject.TeamId)
 	if err != nil {
 		return nil, err
 	}

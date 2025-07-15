@@ -1,16 +1,16 @@
 package services
 
 import (
-	"database/sql"
 	"math/rand/v2"
 	"strconv"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/gosimple/slug"
 )
 
-func RegisterUser(db *sql.DB, _user models.User) (*models.User, error) {
+func RegisterUser(db *db.DB, _user models.User) (*models.User, error) {
 	// Create user
 	user, err := dao.CreateUser(db, _user)
 	if err != nil {

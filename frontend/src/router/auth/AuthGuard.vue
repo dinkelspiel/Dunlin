@@ -2,19 +2,31 @@
 import { onMounted } from 'vue'
 import { useAuthUser } from './AuthUserProvider'
 import type { AuthUser } from './AuthUserProvider'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
-const { setUser } = useAuthUser()
+const { setAuthUser } = useAuthUser()
 const router = useRouter()
+const route = useRoute()
 
 onMounted(async () => {
   const res = await fetch('http://localhost:8080/api/v1/auth/check-session', {
     credentials: 'include',
   })
-  if (!res.ok) router.push('/auth/login')
+  // if (!res.ok) router.push('/auth/login')
+  if (!res.ok) {
+    setAuthUser(null)
 
-  const user: AuthUser = await res.json()
-  setUser(user)
+    if (route.meta.redirectOnAuthFail) {
+      router.push('/auth/login')
+    }
+  }
+
+  const user: AuthUser | { error: string } = await res.json()
+  if ('error' in user) {
+    setAuthUser(null)
+    return
+  }
+  setAuthUser(user)
 })
 </script>
 

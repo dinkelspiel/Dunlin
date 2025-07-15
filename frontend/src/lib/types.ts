@@ -42,3 +42,8 @@ export type TeamProjectResponse = {
   message: string
   teamProject: TeamProject
 }
+
+export type TeamsResponse = {
+  message: string
+  teams: Team[]
+}

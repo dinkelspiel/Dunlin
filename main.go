@@ -2,10 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"os/user"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/routers"
 	routers_user "github.com/dinkelspiel/cdn/routers/user"
 	"github.com/dinkelspiel/cdn/services"
@@ -27,7 +30,7 @@ type PostStatisticBody struct {
 	JavaVersion       string `json:"javaVersion"`
 }
 
-func setupRouter(db *sql.DB) *gin.Engine {
+func setupRouter(db *db.DB) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.New()
@@ -68,6 +71,12 @@ func setupRouter(db *sql.DB) *gin.Engine {
 }
 
 func main() {
+	u, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Running as:", u.Username)
+
 	// Load Config
 	config, err := services.LoadConfig()
 	if err != nil {
@@ -75,22 +84,39 @@ func main() {
 		return
 	}
 
-	services.EnsureFoldersExist()
+	services.EnsureFoldersExists()
 
-	// Load Database
-	dsn := config.DatabaseUrl
-	db, err := sql.Open("mysql", dsn)
+	// Load MariaDB Database
+	dsn := config.MariaDBDatabaseUrl
+	mariaDBClient, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatal("Error opening database: ", err)
+		log.Fatal("Error opening mariadb: ", err)
 		return
 	}
-	defer db.Close()
-	if err = db.Ping(); err != nil {
-		log.Fatal("Error pinging database: ", err)
+	defer mariaDBClient.Close()
+	if err = mariaDBClient.Ping(); err != nil {
+		log.Fatal("Error pinging mariadb: ", err)
 		return
 	}
 
-	r := setupRouter(db)
+	// Load Redis Database
+	// redisClient := redis.NewClient(&redis.Options{
+	// 	Addr: config.RedisDatabaseUrl,
+	// })
+	// defer redisClient.Close()
+
+	// ctx := context.Background()
+	// if err = redisClient.Ping(ctx).Err(); err != nil {
+	// 	log.Fatal("Error pinging redis: ", err)
+	// 	return
+	// }
+
+	db := db.DB{
+		MariaDB: mariaDBClient,
+		// Redis:   redisClient,
+	}
+
+	r := setupRouter(&db)
 
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")

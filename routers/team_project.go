@@ -1,40 +1,29 @@
 package routers
 
 import (
-	"database/sql"
 	"net/http"
 
-	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
+	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/dinkelspiel/cdn/services"
 	"github.com/dinkelspiel/cdn/storage"
 	"github.com/gin-gonic/gin"
 )
 
-func TeamProjectRouter(v1 *gin.RouterGroup, db *sql.DB) {
+type CreateFolderBody struct {
+	Path string `json:"path" binding:"required"`
+}
+
+func TeamProjectRouter(v1 *gin.RouterGroup, db *db.DB) {
 	team := v1.Group("/teams/:teamSlug/projects/:projectSlug")
 	team.GET("", func(c *gin.Context) {
 		teamSlug := c.Param("teamSlug")
-
-		team, err := dao.GetTeamBySlug(db, teamSlug)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
-			return
-		}
-
 		teamProjectSlug := c.Param("projectSlug")
 
-		teamProject, err := dao.GetTeamProjectInTeamBySlug(db, *team, teamProjectSlug)
+		_, teamProject, err := services.GetTeamAndProjectBySlug(db, teamSlug, teamProjectSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if teamProject == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team project found with slug in team"})
 			return
 		}
 
@@ -46,26 +35,11 @@ func TeamProjectRouter(v1 *gin.RouterGroup, db *sql.DB) {
 
 	team.GET("/files/*filepath", func(c *gin.Context) {
 		teamSlug := c.Param("teamSlug")
-
-		team, err := dao.GetTeamBySlug(db, teamSlug)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
-			return
-		}
-
 		teamProjectSlug := c.Param("projectSlug")
 
-		teamProject, err := dao.GetTeamProjectInTeamBySlug(db, *team, teamProjectSlug)
+		_, teamProject, err := services.GetTeamAndProjectBySlug(db, teamSlug, teamProjectSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if teamProject == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team project found with slug in team"})
 			return
 		}
 
@@ -86,6 +60,66 @@ func TeamProjectRouter(v1 *gin.RouterGroup, db *sql.DB) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Found files",
 			"files":   fileList,
+		})
+	})
+
+	team.PUT("/files/*filepath", middleware.AuthMiddleware(db), func(c *gin.Context) {
+		teamSlug := c.Param("teamSlug")
+		teamProjectSlug := c.Param("projectSlug")
+
+		_, teamProject, err := services.GetTeamAndProjectBySlug(db, teamSlug, teamProjectSlug)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		file, err := c.FormFile("file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+			return
+		}
+
+		relativePath := c.Param("filepath")
+		fullPath, err := services.GetFilePathToFileInTeamProject(*teamProject, relativePath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := c.SaveUploadedFile(file, fullPath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Uploaded file",
+		})
+	})
+
+	team.POST("/folders", middleware.AuthMiddleware(db), func(c *gin.Context) {
+		var body CreateFolderBody
+		if err := c.BindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		teamSlug := c.Param("teamSlug")
+		teamProjectSlug := c.Param("projectSlug")
+
+		_, teamProject, err := services.GetTeamAndProjectBySlug(db, teamSlug, teamProjectSlug)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		path, err := services.CreateTeamProjectFolder(*teamProject, body.Path)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Created folder " + path,
 		})
 	})
 }

@@ -1,15 +1,15 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/gosimple/slug"
 )
 
-func CreateTeamProject(db *sql.DB, teamProject models.TeamProject) (*models.TeamProject, error) {
+func CreateTeamProject(db *db.DB, teamProject models.TeamProject) (*models.TeamProject, error) {
 	teamProjectSlug := slug.Make(teamProject.Name)
 
 	existingTeamProject, err := dao.GetTeamProjectInTeamBySlug(db, *teamProject.Team, teamProjectSlug)
@@ -27,7 +27,10 @@ func CreateTeamProject(db *sql.DB, teamProject models.TeamProject) (*models.Team
 		return nil, err
 	}
 
-	CreateTeamProjectFolder(*_teamProject)
+	_, err = CreateTeamProjectFolder(*_teamProject, "/")
+	if err != nil {
+		return nil, err
+	}
 
 	return _teamProject, nil
 }

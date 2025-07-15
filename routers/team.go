@@ -1,10 +1,11 @@
 package routers
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
+	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/dinkelspiel/cdn/services"
 	"github.com/gin-gonic/gin"
@@ -16,19 +17,15 @@ type CreateProjectBody struct {
 	TeamSlug    string `json:"teamSlug" binding:"required"`
 }
 
-func TeamRouter(v1 *gin.RouterGroup, db *sql.DB) {
+func TeamRouter(v1 *gin.RouterGroup, db *db.DB) {
 	team := v1.Group("/teams/:teamSlug")
 
 	team.GET("", func(c *gin.Context) {
 		teamSlug := c.Param("teamSlug")
 
-		team, err := dao.GetTeamBySlug(db, teamSlug)
+		team, err := services.GetTeamBySlug(db, teamSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
 			return
 		}
 
@@ -38,16 +35,12 @@ func TeamRouter(v1 *gin.RouterGroup, db *sql.DB) {
 		})
 	})
 
-	team.GET("/projects", func(c *gin.Context) {
+	team.GET("/projects", middleware.AuthMiddleware(db), func(c *gin.Context) {
 		teamSlug := c.Param("teamSlug")
 
-		team, err := dao.GetTeamBySlug(db, teamSlug)
+		team, err := services.GetTeamBySlug(db, teamSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
 			return
 		}
 
@@ -69,7 +62,7 @@ func TeamRouter(v1 *gin.RouterGroup, db *sql.DB) {
 		})
 	})
 
-	team.POST("/projects", func(c *gin.Context) {
+	team.POST("/projects", middleware.AuthMiddleware(db), func(c *gin.Context) {
 		// authUser, _ := c.MustGet("authUser").(models.User)
 		var body CreateProjectBody
 		if err := c.BindJSON(&body); err != nil {

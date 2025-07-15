@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/models"
 )
 
-func scanTeamRow(rows *sql.Rows, db *sql.DB) (*models.Team, error) {
+func scanTeamRow(rows *sql.Rows, db *db.DB) (*models.Team, error) {
 	var team models.Team
 	var createdAt string
 	var updatedAt sql.NullString
@@ -40,8 +41,8 @@ func scanTeamRow(rows *sql.Rows, db *sql.DB) (*models.Team, error) {
 	return &team, nil
 }
 
-func GetTeamById(db *sql.DB, id int64) (*models.Team, error) {
-	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE id = ?", id)
+func GetTeamById(db *db.DB, id int64) (*models.Team, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +54,8 @@ func GetTeamById(db *sql.DB, id int64) (*models.Team, error) {
 	return nil, nil
 }
 
-func GetTeamsByOwner(db *sql.DB, owner models.User) (*[]models.Team, error) {
-	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE owner_id = ?", owner.Id)
+func GetTeamsByOwner(db *db.DB, owner models.User) (*[]models.Team, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE owner_id = ?", owner.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +73,8 @@ func GetTeamsByOwner(db *sql.DB, owner models.User) (*[]models.Team, error) {
 	return &teams, nil
 }
 
-func GetTeamByName(db *sql.DB, name string) (*models.Team, error) {
-	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE name = ?", name)
+func GetTeamByName(db *db.DB, name string) (*models.Team, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE name = ?", name)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +86,8 @@ func GetTeamByName(db *sql.DB, name string) (*models.Team, error) {
 	return nil, nil
 }
 
-func GetTeamBySlug(db *sql.DB, slug string) (*models.Team, error) {
-	rows, err := db.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE slug = ?", slug)
+func GetTeamBySlug(db *db.DB, slug string) (*models.Team, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, owner_id, created_at, updated_at FROM teams WHERE slug = ?", slug)
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +99,8 @@ func GetTeamBySlug(db *sql.DB, slug string) (*models.Team, error) {
 	return nil, nil
 }
 
-func GetTeamMembers(db *sql.DB, team models.Team) (*[]models.User, error) {
-	rows, err := db.Query("SELECT users.id, users.username, users.email, users.updated_at, users.created_at FROM team_users LEFT JOIN users ON team_users.user_id = users.id WHERE team_users.team_id = ?", team.Id)
+func GetTeamMembers(db *db.DB, team models.Team) (*[]models.User, error) {
+	rows, err := db.MariaDB.Query("SELECT users.id, users.username, users.email, users.updated_at, users.created_at FROM team_users LEFT JOIN users ON team_users.user_id = users.id WHERE team_users.team_id = ?", team.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -116,10 +117,10 @@ func GetTeamMembers(db *sql.DB, team models.Team) (*[]models.User, error) {
 	return &users, nil
 }
 
-func CreateTeam(db *sql.DB, team models.Team) (*models.Team, error) {
+func CreateTeam(db *db.DB, team models.Team) (*models.Team, error) {
 	insertTeam := "INSERT INTO teams(name, slug, owner_id) VALUES(?, ?, ?)"
 
-	_, err := db.Exec(insertTeam, team.Name, team.Slug, team.OwnerId)
+	_, err := db.MariaDB.Exec(insertTeam, team.Name, team.Slug, team.OwnerId)
 	if err != nil {
 		return nil, err
 	}

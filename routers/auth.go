@@ -1,12 +1,12 @@
 package routers
 
 import (
-	"database/sql"
 	"math/rand/v2"
 	"net/http"
 	"strconv"
 
 	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/middleware"
 	"github.com/dinkelspiel/cdn/models"
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,7 @@ type AuthVerifyCodeBody struct {
 	Code int64 `json:"code" binding:"required"`
 }
 
-func AuthRouter(v1 *gin.RouterGroup, db *sql.DB) {
+func AuthRouter(v1 *gin.RouterGroup, db *db.DB) {
 	auth := v1.Group("/auth")
 	auth.POST("/send-code", func(c *gin.Context) {
 		var body AuthSendCodeBody

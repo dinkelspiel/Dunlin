@@ -1,43 +1,118 @@
 package routers
 
 import (
-	"database/sql"
+	"bytes"
+	"fmt"
+	"io"
+	"log"
+	"mime"
 	"net/http"
+	"path/filepath"
+	"strconv"
+	"strings"
 
-	"github.com/dinkelspiel/cdn/dao"
+	"github.com/dinkelspiel/cdn/db"
 	"github.com/dinkelspiel/cdn/services"
+	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 )
 
-func FileRouter(r *gin.RouterGroup, db *sql.DB) {
+func FileRouter(r *gin.RouterGroup, db *db.DB) {
 	r.GET("/files/:teamSlug/:projectSlug/*filepath", func(c *gin.Context) {
 		teamSlug := c.Param("teamSlug")
-
-		team, err := dao.GetTeamBySlug(db, teamSlug)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if team == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team found with slug"})
-			return
-		}
-
 		teamProjectSlug := c.Param("projectSlug")
 
-		teamProject, err := dao.GetTeamProjectInTeamBySlug(db, *team, teamProjectSlug)
+		_, teamProject, err := services.GetTeamAndProjectBySlug(db, teamSlug, teamProjectSlug)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if teamProject == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No team project found with slug in team"})
 			return
 		}
 
 		filePath := c.Param("filepath")
 
 		path, err := services.GetFilePathToFileInTeamProject(*teamProject, filePath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		mimeType := mime.TypeByExtension(filepath.Ext(path))
+		if strings.HasPrefix(mimeType, "image/") {
+			srcImage, err := imaging.Open(path)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open image"})
+				return
+			}
+
+			oldWidth := srcImage.Bounds().Dx()
+			width := srcImage.Bounds().Dx()
+			oldHeight := srcImage.Bounds().Dy()
+			height := srcImage.Bounds().Dy()
+
+			widthStr := c.Query("w")
+			heightStr := c.Query("h")
+			if w, err := strconv.Atoi(widthStr); err == nil {
+				width = w
+			}
+			if h, err := strconv.Atoi(heightStr); err == nil {
+				height = h
+			}
+
+			// Return early if no transformation has to be made
+			if oldWidth == width && oldHeight == height {
+				c.Header("Content-Description", "File Transfer")
+				c.File(path)
+				return
+			}
+
+			cacheFilePath, _ := services.RetrieveCachedImagePath(db, filepath.Dir(path), filePath, width, height)
+			if cacheFilePath != nil {
+				c.Header("Content-Description", "File Transfer")
+				c.File(*cacheFilePath)
+				fmt.Printf("Retrieved cache %s", *cacheFilePath)
+				return
+			}
+
+			dstImage := imaging.Resize(srcImage, width, height, imaging.Lanczos)
+
+			var buf bytes.Buffer
+			format := imaging.PNG
+			switch strings.ToLower(filepath.Ext(path)) {
+			case ".png":
+				format = imaging.PNG
+			case ".jpg", ".jpeg":
+				format = imaging.JPEG
+			case ".gif":
+				format = imaging.GIF
+			default:
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported image format"})
+				return
+			}
+
+			if err := imaging.Encode(&buf, dstImage, format); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode image"})
+				return
+			}
+
+			imageBytes := buf.Bytes()
+
+			c.Header("Content-Type", mimeType)
+			c.Header("Content-Disposition", "inline")
+			_, err = io.Copy(c.Writer, bytes.NewReader(imageBytes))
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stream image"})
+				return
+			}
+
+			go func(data []byte) {
+				err := services.CacheImage(*teamProject, db, bytes.NewReader(data), filepath.Dir(path), filePath, width, height)
+				if err != nil {
+					log.Printf("Failed to cache image: %v", err)
+				}
+			}(imageBytes)
+
+			return
+		}
 
 		c.Header("Content-Description", "File Transfer")
 		c.File(path)
