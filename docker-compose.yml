@@ -28,6 +28,10 @@ services:
         env_file:
             - "./.env"
             - "./frontend/.env"
+        volumes:
+          - type: bind
+            source: /var/dunlin
+            target: /var/dunlin
         build:
             context: .
             dockerfile: Dockerfile
