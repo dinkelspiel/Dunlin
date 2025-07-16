@@ -15,6 +15,10 @@ const router = createRouter({
       component: () => import('../views/Setup.vue'),
     },
     {
+      path: '/',
+      redirect: '/-',
+    },
+    {
       path: '/-',
       component: AuthUserProvider,
       children: [

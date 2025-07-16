@@ -1,9 +1,9 @@
 package routers
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"net/http"
-	"strconv"
 
 	"github.com/dinkelspiel/cdn/dao"
 	"github.com/dinkelspiel/cdn/db"
@@ -55,10 +55,14 @@ func AuthRouter(v1 *gin.RouterGroup, db *db.DB) {
 		}
 		dao.CreateUserAuthCode(db, authCode)
 
-		// TODO: Send email here
+		err = services.SendEmail(user.Email, "Verify Your Dunlin Account", fmt.Sprintf("The code to your Dunlin account is %d. If you did not request this email, you can safely ignore it.", code))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "If an account exists for the email address you provided, a verification code has been sent. Please check your inbox (and spam folder) for further instructions. " + strconv.Itoa(authCode.Code),
+			"message": "If an account exists for the email address you provided, a verification code has been sent. Please check your inbox (and spam folder) for further instructions.",
 		})
 	})
 
