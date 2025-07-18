@@ -49,8 +49,6 @@ func setupRouter(db *db.DB) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	r.StaticFile("/", "./static/index.html")
-
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
