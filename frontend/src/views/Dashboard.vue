@@ -6,7 +6,9 @@ import Button from '@/components/ui/Button.vue'
 import {
   AlertCircle,
   Archive,
+  ChartArea,
   ChevronDown,
+  CornerDownRight,
   File,
   Folder,
   Home,
@@ -246,6 +248,12 @@ watch([team, teamProject], () => {
             </form>
           </DialogContent>
         </Dialog>
+        <router-link :to="`/statistics`">
+          <Button size="sm"
+            ><ChartArea class="size-4" />
+            <div class="sr-only">To Statistics</div>
+          </Button>
+        </router-link>
       </div>
     </header>
     <div class="p-4">

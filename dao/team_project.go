@@ -85,6 +85,24 @@ func GetTeamProjectInTeamBySlug(db *db.DB, team models.Team, slug string) (*mode
 	return nil, nil
 }
 
+func GetTeamProjects(db *db.DB) (*[]models.TeamProject, error) {
+	rows, err := db.MariaDB.Query("SELECT id, name, slug, team_id, created_at, updated_at FROM team_projects")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teamProjects []models.TeamProject
+	for rows.Next() {
+		team, err := scanTeamProjectRow(rows, db)
+		if err != nil {
+			return nil, err
+		}
+		teamProjects = append(teamProjects, *team)
+	}
+	return &teamProjects, nil
+}
+
 func CreateTeamProject(db *db.DB, teamProject models.TeamProject) (*models.TeamProject, error) {
 	insertTeamProject := "INSERT INTO team_projects(name, slug, team_id) VALUES(?, ?, ?)"
 

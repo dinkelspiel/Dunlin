@@ -42,6 +42,18 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/statistics',
+      component: AuthUserProvider,
+      children: [
+        {
+          path: '',
+          name: 'statistics',
+          component: () => import('../views/Statistics.vue'),
+          meta: { redirectOnAuthFail: true },
+        },
+      ],
+    },
   ],
 })
 

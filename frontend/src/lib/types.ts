@@ -47,3 +47,20 @@ export type TeamsResponse = {
   message: string
   teams: Team[]
 }
+
+export type StatisticsResponse = {
+  message: string
+  data: {
+    disk: {
+      total: number
+      free: number
+      hostUsed: number
+      dunlinFilesUsed: number
+      dunlinCacheUsed: number
+    }
+    teamProjectSizes: {
+      size: number
+      teamProject: TeamProject
+    }[]
+  }
+}

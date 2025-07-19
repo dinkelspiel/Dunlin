@@ -7,6 +7,7 @@ type Config struct {
 	RedisDatabaseUrl   string
 	StorageUrl         string
 	AppUrl             string
+	HostRoot           string
 
 	GmailDisplayName string
 	GmailEmail       string
@@ -19,6 +20,7 @@ func LoadConfig() (*Config, error) {
 		RedisDatabaseUrl:   os.Getenv("REDIS_DATABASE_URL"),
 		StorageUrl:         os.Getenv("STORAGE_URL"),
 		AppUrl:             os.Getenv("APP_URL"),
+		HostRoot:           os.Getenv("HOST_ROOT"),
 
 		GmailDisplayName: os.Getenv("GMAIL_DISPLAY_NAME"),
 		GmailEmail:       os.Getenv("GMAIL_EMAIL"),

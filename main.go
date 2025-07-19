@@ -65,6 +65,7 @@ func setupRouter(db *db.DB) *gin.Engine {
 	routers.TeamsRouter(v1, db)
 	routers.TeamRouter(v1, db)
 	routers.TeamProjectRouter(v1, db)
+	routers.StatisticsRouter(v1, db)
 	routers_user.UserTeamsRouter(v1, db)
 
 	r.Static("/assets", "./frontend/dist/assets")
